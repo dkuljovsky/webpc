@@ -4,7 +4,7 @@ A fast, browser-based image converter that turns PNG, JPEG, GIF, BMP, WebP, and 
 
 ## Features
 
-- **Drop files or entire folders** directly into the browser
+- **Select files or folders** via file picker
 - **Bulk conversion** — convert multiple images at once, downloaded as a ZIP archive
 - **Single file download** — get an individual `.webp` file
 - **Adjustable quality** — control output quality with a slider
