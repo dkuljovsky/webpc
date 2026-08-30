@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IMG→WEBP — server converter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="main.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="bar">
+        <div class="mark">IMG<em>→</em>WEBP</div>
+        <div class="bar-mid">SERVER CANVAS ENCODE · /convert</div>
+        <div class="status">
+          <span class="dot" :class="{ pulse: busy }"></span
+          ><span>{{ status }}</span>
+        </div>
+      </header>
+
+      <main id="stage">
+        <!-- idle / selection state -->
+        <section id="idle" v-show="!started">
+          <div class="cmark tl"></div>
+          <div class="cmark tr"></div>
+          <div class="cmark bl"></div>
+          <div class="cmark br"></div>
+          <div class="idle-center">
+            <h1 class="display">Pick images.<br />Get <em>WebP</em>.</h1>
+            <p class="idle-sub">
+              files are sent to the server and returned as a single WebP .zip
+            </p>
+            <p class="idle-disclaimer">max 500MB per request</p>
+            <div class="choices">
+              <button class="choice primary" @click="pickFiles">
+                <span class="c-hint">BROWSE</span>
+                <svg class="c-ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="6" width="14" height="14" />
+                  <path d="M7 6V3h14v14h-3" />
+                  <path d="M10 16l6-6M16 14v-4h-4" />
+                </svg>
+                <span class="c-title">Select files</span>
+                <span class="c-desc">PNG · JPG · GIF · BMP · AVIF · WEBP</span>
+              </button>
+              <button class="choice" @click="pickFolder">
+                <span class="c-hint">BROWSE</span>
+                <svg class="c-ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h6l2 2h10v12H3z" />
+                  <path d="M12 13v5M9.5 15.5L12 13l2.5 2.5" />
+                </svg>
+                <span class="c-title">Select folder</span>
+                <span class="c-desc">EVERY IMAGE INSIDE, RECURSIVELY</span>
+              </button>
+            </div>
+          </div>
+          <div class="idle-foot">
+            <span>SERVER CONVERT · /convert</span>
+            <span>SENT AS image/* ONLY</span>
+          </div>
+        </section>
+
+        <!-- workspace state -->
+        <section id="work" v-show="started">
+          <div class="work-top">
+            <button class="btn" @click="clearAll">← CLEAR</button>
+            <span class="info">{{ queueInfo }}</span>
+            <div class="fc">
+              <button class="btn" @click="pickFiles">+ FILES</button>
+              <button class="btn" @click="pickFolder">+ FOLDER</button>
+            </div>
+          </div>
+          <div class="work-body">
+            <figure class="preview">
+              <div class="pmark tl"></div>
+              <div class="pmark tr"></div>
+              <div class="pmark bl"></div>
+              <div class="pmark br"></div>
+              <div class="imgwrap">
+                <img v-if="activeFile" :src="activeFile.srcUrl" alt="preview" />
+              </div>
+              <figcaption class="preview-cap">
+                {{ activeFile ? previewMeta : "—" }}
+              </figcaption>
+            </figure>
+            <aside class="rail">
+              <div class="r-head">
+                <span class="b-label">{{ fileIdxText }}</span>
+                <span class="badge"
+                  >{{ activeFile ? activeFile.type : "—" }}</span
+                >
+              </div>
+              <h2 class="fname" :title="activeFile && activeFile.name">
+                {{ activeFile ? activeFile.name : "—" }}
+              </h2>
+
+              <div class="block">
+                <div class="b-row">
+                  <span class="b-label">QUALITY</span
+                  ><span class="qnum">{{ quality }}</span>
+                </div>
+                <input
+                  type="range"
+                  id="quality"
+                  min="1"
+                  max="100"
+                  v-model.number="quality"
+                  :style="{ '--fill': quality + '%' }"
+                />
+                <div class="b-sub">LOSSY · SENT TO SERVER ON CONVERT</div>
+              </div>
+
+              <div class="block">
+                <div class="gauge">
+                  <span class="b-label">SOURCE</span>
+                  <span class="g-bar"
+                    ><i :style="{ width: activeFile ? '100%' : '0%' }"></i
+                  ></span>
+                  <b>{{ activeFile ? fmt(activeFile.size) : "—" }}</b>
+                </div>
+                <div class="gauge">
+                  <span class="b-label">OUTPUT</span>
+                  <span class="g-bar"
+                    ><i
+                      class="acc"
+                      :style="{ width: outSize ? '100%' : '0%' }"
+                    ></i
+                  ></span>
+                  <b>{{ outSize ? fmt(outSize) : "—" }}</b>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="b-label">STATUS</div>
+                <div class="big">{{ outMark }}</div>
+                <div class="b-sub">{{ outNote }}</div>
+              </div>
+
+              <div class="spacer"></div>
+              <div class="btn-col">
+                <button
+                  class="btn primary"
+                  :disabled="busy"
+                  @click="downloadActive"
+                >
+                  {{ busy ? (status.value === 'UPLOADING' ? 'CONVERTING…' :
+                  'DOWNLOADING…') : 'DOWNLOAD ↓' }}
+                </button>
+                <button
+                  class="btn"
+                  :disabled="busy"
+                  @click="convertAll"
+                  v-show="files.length > 1"
+                >
+                  SAVE ALL ↓
+                </button>
+              </div>
+              <div class="b-sub center">
+                INDIVIDUAL .WEBP DOWNLOAD · BATCH ZIP VIA SAVE ALL
+              </div>
+            </aside>
+          </div>
+          <div class="work-queue" v-show="files.length > 1">
+            <button
+              v-for="(f, i) in files"
+              :key="f.id"
+              class="thumb"
+              :class="{ active: f.id === activeId }"
+              :title="f.name + ' — ' + fmt(f.size)"
+              @click="activeId = f.id"
+            >
+              <span class="idx">{{ String(i + 1).padStart(2, "0") }}</span>
+              <img :src="f.thumbUrl" alt="" />
+              <span
+                class="dl"
+                @click.stop="downloadFile(f)"
+                :title="'download ' + f.name"
+                >↓</span
+              >
+            </button>
+          </div>
+        </section>
+
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          @change="onFileChange"
+        />
+        <input
+          ref="folderInput"
+          type="file"
+          webkitdirectory
+          hidden
+          @change="onFolderChange"
+        />
+      </main>
+
+      <footer class="bar">
+        <span>SERVER CONVERT · /convert · CANVAS API</span>
+        <span class="mid">ESC — CLEAR QUEUE · ← → — SWITCH FILE</span>
+        <span>WEBP ENCODE · OK</span>
+      </footer>
+
+      <div id="toasts">
+        <div
+          v-for="t in toasts"
+          :key="t.id"
+          class="toast"
+          :class="['toast', { show: t.show }, t.kind]"
+        >
+          {{ t.msg }}
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="main.js" defer></script>
+  </body>
+</html>

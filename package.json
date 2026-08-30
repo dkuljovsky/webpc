@@ -1,0 +1,13 @@
+{
+  "name": "worktrees",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "dev": "bun run --watch app.ts"
+  }
+}
