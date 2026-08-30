@@ -10,7 +10,7 @@ A fast, browser-based image converter that turns PNG, JPEG, GIF, BMP, WebP, and 
 - **Adjustable quality** — control output quality with a slider
 - **Live previews** — see image dimensions and metadata before converting
 - **Keyboard shortcuts** — arrow keys to navigate images, Escape to clear the queue
-- **Folder upload** — drag and drop a whole folder of images
+- **Folder upload** — select a whole folder of images
 
 ## Tech Stack
 
@@ -53,7 +53,7 @@ docker run -p 4000:4000 -e PORT=4000 webpc
 ```
 ├── app.ts          # Bun server — routes, image conversion, static file serving
 ├── public/
-│   └── main.js     # Vue 3 frontend — drag-and-drop, previews, conversion UI
+│   └── main.js     # Vue 3 frontend — selection, previews, conversion UI
 ├── Dockerfile      # Container image for deployment
 └── package.json
 ```
