@@ -13,6 +13,9 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 ENV PORT=4000
+ENV HOSTNAME=0.0.0.0
+ENV MAX_BODY_SIZE=524288000
+
 EXPOSE 4000
 
 CMD ["bun", "app.ts"]

@@ -58,6 +58,8 @@ class TempArchive {
 }
 
 const PORT = Number(Bun.env.PORT ?? "4000");
+const HOSTNAME = Bun.env.HOSTNAME ?? "0.0.0.0";
+const MAX_BODY_SIZE = Number(Bun.env.MAX_BODY_SIZE ?? 100 * 1024 * 1024 * 5);
 
 const MIME: Record<string, string> = {
   html: "text/html; charset=utf-8",
@@ -165,8 +167,8 @@ const app = Bun.serve({
     });
   },
   port: PORT,
-  hostname: "0.0.0.0",
-  maxRequestBodySize: 100 * 1024 * 1024 * 5, // 500 MB
+  hostname: HOSTNAME,
+  maxRequestBodySize: MAX_BODY_SIZE,
 });
 
 console.log(`Server running on port ${app.port}`);

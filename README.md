@@ -38,29 +38,27 @@ Then open [http://localhost:4000](http://localhost:4000) in your browser.
 
 ```bash
 docker build -t webpc .
-docker run -p 4000:4000 -e PORT=4000 webpc
+docker run -p 4000:4000 webpc
 ```
 
-## How it works
+Override defaults with `-e`:
 
-1. The browser-side Vue app lets you select images or folders and preview them
-2. On conversion, files are sent to the Bun server via `POST /convert`
-3. The server converts each image to WebP using `Bun.Image`
-4. A single image returns the `.webp` file directly; multiple images are returned as a ZIP archive
-
-## Project Structure
-
+```bash
+docker run -p 4000:4000 -e HOSTNAME=127.0.0.1 -e MAX_BODY_SIZE=104857600 webpc
 ```
-├── app.ts          # Bun server — routes, image conversion, static file serving
-├── public/
-│   └── main.js     # Vue 3 frontend — selection, previews, conversion UI
-├── Dockerfile      # Container image for deployment
-└── package.json
+
+Or with a `.env` file:
+
+```bash
+docker run --env-file .env -p 4000:4000 webpc
 ```
 
 ## Environment
 
-- **PORT** — Server port (default: `4000`)
-- **Max upload size** — 500 MB
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `4000` | Server port |
+| `HOSTNAME` | `0.0.0.0` | Bind address |
+| `MAX_BODY_SIZE` | `524288000` (500 MB) | Max request body size in bytes |
 
 This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
