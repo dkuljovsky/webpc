@@ -59,7 +59,13 @@ class TempArchive {
 
 const PORT = Number(Bun.env.PORT ?? "4000");
 const HOSTNAME = Bun.env.HOSTNAME ?? "0.0.0.0";
+const fmtBytes = (bytes: number) => {
+  const mb = Math.round(bytes / (1024 * 1024));
+  return mb + "MB";
+};
+
 const MAX_BODY_SIZE = Number(Bun.env.MAX_BODY_SIZE ?? 100 * 1024 * 1024 * 5);
+const MAX_BODY_SIZE_LABEL = fmtBytes(MAX_BODY_SIZE);
 
 const MIME: Record<string, string> = {
   html: "text/html; charset=utf-8",
@@ -152,7 +158,7 @@ const app = Bun.serve({
       },
     },
   },
-  async fetch(req) {
+async fetch(req) {
     const url = new URL(req.url);
 
     let path = url.pathname === "/" ? "/index.html" : url.pathname;
@@ -162,7 +168,16 @@ const app = Bun.serve({
       return new Response("Not Found", { status: 404 });
     }
 
-    return new Response(Bun.file(filePath), {
+    const file = Bun.file(filePath);
+    const content = await file.text();
+
+    if (path.endsWith(".html")) {
+      return new Response(content.replace(/__MAX_BODY_SIZE__/g, MAX_BODY_SIZE_LABEL), {
+        headers: { "Content-Type": contentTypeFor(filePath) },
+      });
+    }
+
+    return new Response(file, {
       headers: { "Content-Type": contentTypeFor(filePath) },
     });
   },
