@@ -1,11 +1,9 @@
-FROM oven/bun:1.4
+FROM oven/bun:1.4-alpine
 
 WORKDIR /app
 
 # `zip` is shelled out to via Bun.$ for the archive step
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends zip unzip \
-  && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache zip unzip
 
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
