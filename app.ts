@@ -58,7 +58,7 @@ class TempArchive {
 }
 
 const PORT = Number(Bun.env.PORT ?? "4000");
-const HOSTNAME = Bun.env.HOSTNAME ?? "0.0.0.0";
+const HOSTNAME = Bun.env.HOSTNAME ?? "127.0.0.1";
 const fmtBytes = (bytes: number) => {
   const mb = Math.round(bytes / (1024 * 1024));
   return mb + "MB";
@@ -158,7 +158,7 @@ const app = Bun.serve({
       },
     },
   },
-async fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
 
     let path = url.pathname === "/" ? "/index.html" : url.pathname;
@@ -172,9 +172,12 @@ async fetch(req) {
     const content = await file.text();
 
     if (path.endsWith(".html")) {
-      return new Response(content.replace(/__MAX_BODY_SIZE__/g, MAX_BODY_SIZE_LABEL), {
-        headers: { "Content-Type": contentTypeFor(filePath) },
-      });
+      return new Response(
+        content.replace(/__MAX_BODY_SIZE__/g, MAX_BODY_SIZE_LABEL),
+        {
+          headers: { "Content-Type": contentTypeFor(filePath) },
+        },
+      );
     }
 
     return new Response(file, {
