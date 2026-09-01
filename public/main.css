@@ -405,6 +405,7 @@ footer .mid {
   display: flex;
   flex-direction: column;
   padding: 30px 30px 16px;
+  overflow: hidden;
   background-image: radial-gradient(var(--dot-preview) 1px, transparent 1.4px);
   background-size: 22px 22px;
 }
