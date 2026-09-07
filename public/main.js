@@ -21,6 +21,9 @@ createApp({
     const outMark = ref("—");
     const outNote = ref("QUEUED FOR SERVER CONVERSION");
 
+    const dropActive = ref(false);
+    let dragDepth = 0;
+
     let uid = 0;
     let toastId = 0;
 
@@ -286,6 +289,45 @@ createApp({
       addFiles(picked, folderName ? 'folder "' + folderName + '"' : "folder");
     }
 
+    // ---- drag & drop ----
+    function onDragEnter(e) {
+      e.preventDefault();
+      dragDepth++;
+      dropActive.value = true;
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+    function onDragLeave(e) {
+      e.preventDefault();
+      dragDepth--;
+      if (dragDepth <= 0) {
+        dragDepth = 0;
+        dropActive.value = false;
+      }
+    }
+    function onDrop(e) {
+      e.preventDefault();
+      dragDepth = 0;
+      dropActive.value = false;
+      const files = e.dataTransfer.files;
+      if (files && files.length) {
+        addFiles(files, "drop");
+      }
+    }
+    function onWindowDragEnd() {
+      dragDepth = 0;
+      dropActive.value = false;
+    }
+
+    window.addEventListener("dragenter", onDragEnter);
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("dragleave", onDragLeave);
+    window.addEventListener("drop", onDrop);
+    window.addEventListener("dragend", onWindowDragEnd);
+    window.addEventListener("dragcancel", onWindowDragEnd);
+
     // ---- keyboard shortcuts (workspace) ----
     window.addEventListener("keydown", (e) => {
       if (!started.value) return;
@@ -316,6 +358,7 @@ createApp({
       outSize,
       outMark,
       outNote,
+      dropActive,
       started,
       activeFile,
       queueInfo,
