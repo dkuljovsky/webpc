@@ -73,6 +73,7 @@ const MIME: Record<string, string> = {
   js: "application/javascript",
   mjs: "application/javascript",
   json: "application/json",
+  webmanifest: "application/manifest+json",
   png: "image/png",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
